@@ -4,7 +4,7 @@ import { useAuthStore } from '../stores/authStore';
 
 const routes = [
   {
-    path: '/',  
+    path: '/',    
     redirect: '/kasir'
   },
   {
