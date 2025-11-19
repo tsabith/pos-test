@@ -1,0 +1,16 @@
+src/
+    ├── components/
+    │   ├── BarcodeScanner.vue
+    │   ├── CartItem.vue
+    │   ├── PaymentModal.vue
+    │   └── ReceiptPrint.vue
+    ├── views/
+    │   ├── KasirView.vue
+    │   ├── ShiftView.vue
+    │   └── LaporanView.vue
+    ├── stores/
+    │   ├── cartStore.js
+    │   ├── authStore.js
+    │   └── transaksiStore.js
+    └── services/
+        └── api.js
