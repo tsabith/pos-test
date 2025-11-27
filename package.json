@@ -4,7 +4,7 @@
   "description": "POS Kasir - Vue + Node.js + MySQL",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npx vite build",
     "preview": "vite preview",
     
     "backend": "node backend/server.js",
