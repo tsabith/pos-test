@@ -1,75 +1,60 @@
 pipeline {
-    agent {
-        label 'stb'
+    agent { label 'stb' }
+
+    environment {
+        NODE_ENV = 'production'
     }
 
     stages {
-        stage('Prepare Node Environment') {
-            agent {
-                docker {
-                    image 'node:18'
-                    args '-u root'
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Install Node Modules') {
+            steps {
+                sh 'npm ci'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                script {
+                    if (fileExists('package.json')) {
+                        sh 'npm test || echo "No test script found or test skipped"'
+                    }
                 }
             }
-            stages {
+        }
 
-                stage('Checkout') {
-                    steps {
-                        checkout scm
-                    }
-                }
+        stage('Build') {
+            steps {
+                sh 'npm run build'
+            }
+        }
 
-                stage('Install dependencies') {
-                    steps {
-                        sh 'npm ci'
-                    }
-                }
+        stage('Archive Build Artifacts') {
+            steps {
+                archiveArtifacts artifacts: 'dist/**', fingerprint: true
+            }
+        }
 
-                stage('Test') {
-                    steps {
-                        script {
-                            // Jika project tidak punya test, boleh kamu disable
-                            if (fileExists('package.json')) {
-                                sh 'npm test || echo "No test script found or skipped"'
-                            }
-                        }
-                    }
-                }
-
-                stage('Build') {
-                    steps {
-                        sh 'npm run build'
-                    }
-                }
-
-                stage('Archive build artifacts') {
-                    steps {
-                        archiveArtifacts artifacts: 'dist/**', fingerprint: true
-                    }
-                }
-
-                stage('Deploy') {
-                    when {
-                        branch 'main'
-                    }
-                    steps {
-                        echo '📦 Deploying to server...'
-                        // Contoh deploy (sesuaikan):
-                        // sh 'scp -r dist/* user@server:/var/www/html/'
-                        // sh 'rsync -avz dist/ user@server:/var/www/vue-app/'
-                    }
-                }
-
+        stage('Deploy') {
+            when {
+                branch 'main'
+            }
+            steps {
+                echo "Deploying to target server..."
+                // contoh deploy pakai rsync / scp jika diperlukan
+                // sh 'rsync -avz dist/ user@server:/var/www/project/'
             }
         }
     }
 
     post {
-        success {
-            echo "✔ Build sukses!"
-        }
-        failure {
-            echo "❌ Build gagal!"
-        }
+        success { echo "✔ Build succeed!" }
+        failure { echo "❌ Build failed!" }
     }
 }
