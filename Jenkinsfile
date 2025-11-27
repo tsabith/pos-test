@@ -12,6 +12,12 @@ pipeline {
                 checkout scm
             }
         }
+	
+	stage('Install npm packages') {
+	    steps {
+	        sh 'npm install'
+	    }
+	}
 
         stage('Install Node Modules') {
             steps {
