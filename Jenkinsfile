@@ -1,66 +1,75 @@
 pipeline {
-    agent any
-
-    environment {
-        // contoh: jika butuh node versi spesifik, bisa set di sini
-        NODE_ENV = 'production'
+    agent {
+        label 'stb'
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                git url: 'https://github.com/tsabith/pos-test.git', branch: 'main'
+        stage('Prepare Node Environment') {
+            agent {
+                docker {
+                    image 'node:18'
+                    args '-u root'
+                }
+            }
+            stages {
+
+                stage('Checkout') {
+                    steps {
+                        checkout scm
+                    }
+                }
+
+                stage('Install dependencies') {
+                    steps {
+                        sh 'npm ci'
+                    }
+                }
+
+                stage('Test') {
+                    steps {
+                        script {
+                            // Jika project tidak punya test, boleh kamu disable
+                            if (fileExists('package.json')) {
+                                sh 'npm test || echo "No test script found or skipped"'
+                            }
+                        }
+                    }
+                }
+
+                stage('Build') {
+                    steps {
+                        sh 'npm run build'
+                    }
+                }
+
+                stage('Archive build artifacts') {
+                    steps {
+                        archiveArtifacts artifacts: 'dist/**', fingerprint: true
+                    }
+                }
+
+                stage('Deploy') {
+                    when {
+                        branch 'main'
+                    }
+                    steps {
+                        echo '📦 Deploying to server...'
+                        // Contoh deploy (sesuaikan):
+                        // sh 'scp -r dist/* user@server:/var/www/html/'
+                        // sh 'rsync -avz dist/ user@server:/var/www/vue-app/'
+                    }
+                }
+
             }
         }
-
-        stage('Install dependencies') {
-            steps {
-                // gunakan npm ci supaya konsisten dengan package-lock.json :contentReference[oaicite:1]{index=1}
-                sh 'npm ci'
-            }
-        }
-
-        stage('Lint / Test') {
-            steps {
-                // optional: jalankan lint / test jika ada
-                // misal: npm run lint, npm run test
-                // uncomment jika kamu punya script test
-                // sh 'npm run lint'
-                // sh 'npm run test'
-                echo 'Skipping lint/test — sesuaikan kalau kamu punya.'
-            }
-        }
-
-        stage('Build') {
-            steps {
-                sh 'npm run build'
-            }
-        }
-
-        stage('Archive build artifacts') {
-            steps {
-                // simpan hasil build (folder dist) sebagai artefak build
-                archiveArtifacts artifacts: 'dist/**', fingerprint: true
-            }
-        }
-
-        // Jika kamu butuh deploy otomatis ke server atau host lain,
-        // kamu bisa tambahkan stage deploy di sini
-        // Contoh:
-        // stage('Deploy') {
-        //   steps {
-        //     // misal copy hasil build ke server via scp / rsync / docker, dsb.
-        //     echo 'Deploy step — sesuaikan dengan environment kamu'
-        //   }
-        // }
     }
 
     post {
         success {
-            echo "Build successful!"
+            echo "✔ Build sukses!"
         }
         failure {
-            echo "Build failed!"
+            echo "❌ Build gagal!"
         }
     }
 }
